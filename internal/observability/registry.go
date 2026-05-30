@@ -28,10 +28,8 @@ func (r *Registry) Unregister(name string) {
 func (r *Registry) Snapshot() map[string]interface{} {
 	r.mu.RLock()
 	// copy keys to avoid holding lock while calling user funcs
-	names := make([]string, 0, len(r.funcs))
 	copied := make(map[string]SnapshotFunc, len(r.funcs))
 	for k, v := range r.funcs {
-		names = append(names, k)
 		copied[k] = v
 	}
 	r.mu.RUnlock()

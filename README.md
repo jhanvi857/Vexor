@@ -287,12 +287,27 @@ If the circuit breaker transitions to `OPEN` after detecting five consecutive fa
 }
 ```
 
+### Rate Limiting Middleware
+Vexor now includes a token bucket limiter in the gateway middleware chain. The limiter is configured with a capacity of 100 tokens and a refill rate of 10 tokens per second. Requests that exceed the limit receive `HTTP 429 Too Many Requests` with a `Retry-After: 1` header.
+
+The rate limiter also exposes a snapshot with the current token count and capacity, and that snapshot is registered with the observability registry alongside the circuit breaker metrics.
+
+### Gateway Wiring Update
+The gateway middleware chain now includes rate limiting between the request ID and logger middleware. The current order is:
+
+1. Recovery
+2. Request ID
+3. Rate limit
+4. Logger
+
+The gateway server also exposes the metrics endpoint at `/metrics` through the observability registry.
+
 ---
 
 ## Getting Started
 
 ### Prerequisites
-* Go compiler version 1.26 or later installed.
+* Go compiler version 1.22 or later installed.
 
 ### Compilation and Execution
 To compile the gateway and run the application locally:
@@ -306,6 +321,13 @@ go run ./cmd/vexor
 ```
 
 By default, the gateway server starts listening on port `:8080` (as defined in [server.go](https://github.com/jhanvi857/Vexor/blob/main/internal/gateway/server.go)).
+
+### Continuous Integration
+The repository includes a GitHub Actions workflow at [.github/workflows/ci.yml](.github/workflows/ci.yml). It runs on push and pull requests to `main` and performs:
+
+- `go vet ./...`
+- `go test ./... -race -count=1`
+- `golangci-lint run`
 
 ---
 
