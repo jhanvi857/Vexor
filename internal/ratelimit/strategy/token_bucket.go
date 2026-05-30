@@ -18,8 +18,8 @@ func (tb *TokenBucket) Allow() bool {
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
 	now := time.Now()
-	elasped := now.Sub(tb.LastRefillTime).Seconds()
-	newTokens := elasped * tb.RefillRate
+	elapsed := now.Sub(tb.LastRefillTime).Seconds()
+	newTokens := elapsed * tb.RefillRate
 	tb.Tokens = math.Min(float64(tb.Capacity), tb.Tokens+newTokens)
 	tb.LastRefillTime = now
 	if tb.Tokens >= 1 {

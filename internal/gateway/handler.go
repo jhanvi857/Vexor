@@ -13,7 +13,7 @@ func GatewayHandler() http.Handler {
 
 		route := routing.MatchRoute(r.URL.Path)
 
-		if route == nil {
+		if route.Path == "" {
 			http.NotFound(w, r)
 			return
 		}
