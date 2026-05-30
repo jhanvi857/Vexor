@@ -36,8 +36,8 @@ flowchart LR
 	end
 	Router --> Proxy[Proxy - forward to upstream]
 	Proxy --> Upstream[Upstream Service]
-	Gateway -.-> Observability[Observability - registry / metrics]
-	Observability --> MetricsEndpoint[/metrics]
+	Gateway -.-> Observability[Observability - registry and metrics]
+	Observability --> MetricsEndpoint["/metrics"]
 ```
 
 Sequence (request) - simplified:
