@@ -23,6 +23,9 @@ func Start() {
 		return rateLimiter.Snapshot()
 	})
 
+	// initialize balancers from config.
+	InitBalancers()
+
 	handler := GatewayHandler()
 	finalHandler := middleware.Chain(handler, middleware.Recovery, middleware.RequestID, ratelimit.Middleware(rateLimiter, nil), middleware.Logger)
 	http.Handle("/metrics", observability.JSONHandler(metricsRegistry))
