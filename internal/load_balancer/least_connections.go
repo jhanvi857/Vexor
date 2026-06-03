@@ -24,7 +24,7 @@ func (lc *LeastConnections) NextInstance() (*Instance, error) {
 	var chosen *Instance
 	var min int64 = -1
 	for _, inst := range lc.instances {
-		if !inst.Healthy {
+		if inst == nil || !inst.IsHealthy() {
 			continue
 		}
 		ac := atomic.LoadInt64(&inst.ActiveConnections)

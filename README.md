@@ -69,11 +69,11 @@ Routes can use a single upstream or multiple upstreams. When multiple instances 
 - Weighted round robin
 - Least connections
 
-Route configuration lives in [internal/config/routes.go](internal/config/routes.go), and balancer logic lives in [internal/load_balancer](internal/load_balancer).
+Route configuration lives in [config.yaml](config.yaml) and is loaded at startup by [internal/config](internal/config). Balancer logic lives in [internal/load_balancer](internal/load_balancer), and rate limiting is configured per route.
 
 ## Runtime Behavior
 
-The gateway starts on port `8080` by default. Requests pass through the middleware chain, are checked by the rate limiter and circuit breaker, and then are routed to the matching upstream service.
+The gateway starts on port `8080` by default. Requests are matched to a route, checked by that route's rate limiter and circuit breaker, and then proxied to the matching upstream service. The server shuts down gracefully on `SIGINT` or `SIGTERM`.
 
 The `/metrics` endpoint returns snapshot data for internal components such as the rate limiter.
 
@@ -104,22 +104,26 @@ go test ./...
 
 ## Configuration
 
-Routes are defined in [internal/config/routes.go](internal/config/routes.go). A route can point to one upstream with `Target` or multiple upstreams with `Targets` and a balancing `Strategy`.
+Routes are defined in [config.yaml](config.yaml). The file is loaded at startup and can be overridden with the `VEXOR_CONFIG` environment variable. A route can point to one upstream with `Target` or multiple upstreams with `Targets` and a balancing `Strategy`.
 
 Example:
 
-```go
-var Routes = []Route{
-    {
-        Path:     "/users",
-        Targets:  []string{"http://localhost:3001|1", "http://localhost:3003|2"},
-        Strategy: "weighted",
-    },
-    {
-        Path:   "/orders",
-        Target: "http://localhost:3002",
-    },
-}
+```yaml
+routes:
+    - path: /users
+        targets:
+            - http://localhost:3001|1
+            - http://localhost:3003|2
+        strategy: weighted
+        rate_limit:
+            strategy: token_bucket
+            capacity: 100
+            refill_rate: 10
+    - path: /orders
+        target: http://localhost:3002
+        rate_limit:
+            strategy: fixed_window
+            limit: 100
 ```
 
 ## Requirements

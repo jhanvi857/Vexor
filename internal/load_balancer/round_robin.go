@@ -28,7 +28,7 @@ func (rr *RoundRobin) NextInstance() (*Instance, error) {
 	for i := 0; i < n; i++ {
 		instance := rr.instances[rr.current]
 		rr.current = (rr.current + 1) % n
-		if instance.Healthy {
+		if instance != nil && instance.IsHealthy() {
 			return instance, nil
 		}
 	}

@@ -40,7 +40,7 @@ func (wr *WeightedRoundRobin) NextInstance() (*Instance, error) {
 	var bestIndex = -1
 	for i := 0; i < n; i++ {
 		inst := wr.instances[i]
-		if inst == nil || !inst.Healthy {
+		if inst == nil || !inst.IsHealthy() {
 			continue
 		}
 		wr.curr[i] += inst.Weight

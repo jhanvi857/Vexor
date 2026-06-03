@@ -1,0 +1,16 @@
+routes:
+  - path: /users
+    targets:
+      - http://localhost:3001|1
+      - http://localhost:3003|2
+    strategy: weighted
+    rate_limit:
+      strategy: token_bucket
+      capacity: 100
+      tokens: 100
+      refill_rate: 10
+  - path: /orders
+    target: http://localhost:3002
+    rate_limit:
+      strategy: fixed_window
+      limit: 100
