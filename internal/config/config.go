@@ -11,7 +11,8 @@ import (
 
 // Config describes the runtime gateway configuration file.
 type Config struct {
-	Routes []Route `yaml:"routes" json:"routes"`
+	Routes         []Route  `yaml:"routes" json:"routes"`
+	TrustedProxies []string `yaml:"trusted_proxies" json:"trusted_proxies"`
 }
 
 // RateLimitConfig configures a per-route limiter.
@@ -38,6 +39,8 @@ func Load(path string) ([]Route, error) {
 	if err := yaml.Unmarshal(content, &cfg); err != nil {
 		return nil, fmt.Errorf("parse %s: %w", path, err)
 	}
+	Routes = cfg.Routes
+	TrustedProxies = cfg.TrustedProxies
 	return cfg.Routes, nil
 }
 

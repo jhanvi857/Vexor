@@ -15,3 +15,6 @@ type Route struct {
 
 // Routes is populated from config.yaml at startup.
 var Routes []Route
+
+// TrustedProxies is populated from config.yaml at startup.
+var TrustedProxies []string
