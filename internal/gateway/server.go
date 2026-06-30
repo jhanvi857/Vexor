@@ -10,9 +10,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jhanvi857/vexor/internal/breaker"
 	"github.com/jhanvi857/vexor/internal/config"
 	"github.com/jhanvi857/vexor/internal/middleware"
 	"github.com/jhanvi857/vexor/internal/observability"
+	strategy "github.com/jhanvi857/vexor/internal/ratelimit/strategy"
 )
 
 func Start() {
@@ -24,6 +26,32 @@ func Start() {
 
 	metricsRegistry := observability.NewRegistry()
 	metricsRegistry.Register("routes", func() interface{} { return config.Routes })
+	metricsRegistry.Register("breakers", func() interface{} {
+		snapshots := make(map[string]interface{})
+		for path, cb := range breakers {
+			if cb != nil {
+				snapshots[path] = breaker.Snapshot(cb)
+			}
+		}
+		return snapshots
+	})
+	metricsRegistry.Register("rate_limiters", func() interface{} {
+		snapshots := make(map[string]interface{})
+		for path, rl := range rateLimiters {
+			if rl != nil {
+				if snap, ok := rl.(*strategy.TokenBucket); ok {
+					snapshots[path] = snap.Snapshot()
+				} else if snap, ok := rl.(*strategy.FixedWindow); ok {
+					snapshots[path] = snap.Snapshot()
+				} else if snap, ok := rl.(*strategy.SlidingCounter); ok {
+					snapshots[path] = snap.Snapshot()
+				} else if snap, ok := rl.(*strategy.SlidingLog); ok {
+					snapshots[path] = snap.Snapshot()
+				}
+			}
+		}
+		return snapshots
+	})
 
 	// initialize balancers, breakers, and route-local rate limiters from config.
 	InitRoutePolicies()

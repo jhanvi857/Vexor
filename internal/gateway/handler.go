@@ -3,7 +3,9 @@ package gateway
 import (
 	"net/http"
 	"strconv"
+	"sync/atomic"
 
+	"github.com/jhanvi857/vexor/internal/load_balancer"
 	"github.com/jhanvi857/vexor/internal/proxy"
 	"github.com/jhanvi857/vexor/internal/routing"
 )
@@ -11,6 +13,11 @@ import (
 func GatewayHandler() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if !proxy.IsTrustedProxy(r.RemoteAddr) {
+			http.Error(w, "Forbidden: Untrusted socket peer", http.StatusForbidden)
+			return
+		}
 
 		route := routing.MatchRoute(r.URL.Path)
 
@@ -39,6 +46,7 @@ func GatewayHandler() http.Handler {
 		// If a balancer exists for this route (multiple targets configured),
 		// select an instance from the balancer and proxy to that instance.
 		target := route.Target
+		var selectedInstance *load_balancer.Instance
 		if b := GetBalancer(route.Path); b != nil {
 			inst, err := b.NextInstance()
 			if err != nil {
@@ -49,6 +57,12 @@ func GatewayHandler() http.Handler {
 				return
 			}
 			target = inst.URL
+			selectedInstance = inst
+		}
+
+		if selectedInstance != nil {
+			atomic.AddInt64(&selectedInstance.ActiveConnections, 1)
+			defer atomic.AddInt64(&selectedInstance.ActiveConnections, -1)
 		}
 
 		proxyInstance, err := proxy.NewProxy(target)

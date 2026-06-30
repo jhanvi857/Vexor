@@ -126,7 +126,11 @@ func buildRateLimiter(route config.Route) strategy.Strategy {
 		if limit <= 0 {
 			limit = 100
 		}
-		return &strategy.FixedWindow{Limit: limit, WindowStart: time.Now()}
+		window := time.Duration(conf.WindowSecs) * time.Second
+		if window <= 0 {
+			window = time.Minute
+		}
+		return &strategy.FixedWindow{Limit: limit, Window: window, WindowStart: time.Now()}
 	case "sliding_counter":
 		limit := conf.Limit
 		if limit <= 0 {
