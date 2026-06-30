@@ -77,3 +77,29 @@ func (sc *SlidingCounter) Allow() bool {
 	}
 	return false
 }
+
+type SlidingCounterMetrics struct {
+	Limit        int   `json:"limit"`
+	WindowSecs   int64 `json:"window_seconds"`
+	NumBuckets   int   `json:"num_buckets"`
+	CurrentCount int   `json:"current_count"`
+}
+
+func (sc *SlidingCounter) Snapshot() SlidingCounterMetrics {
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+	now := time.Now()
+	sc.ensureInitialized(now)
+	sc.advanceBuckets(now)
+
+	total := 0
+	for _, c := range sc.buckets {
+		total += c
+	}
+	return SlidingCounterMetrics{
+		Limit:        sc.Limit,
+		WindowSecs:   int64(sc.Window / time.Second),
+		NumBuckets:   sc.NumBuckets,
+		CurrentCount: total,
+	}
+}
